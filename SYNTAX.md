@@ -3,94 +3,97 @@
 ## Specification
 The root of the program is `program`, from which all syntax branches.
 ```
-program              = [ root statement, { newline, root statement } ] ;
+program                = [ root statement, { newline, root statement } ] ;
 
-root statement       = function definition | object definition | event definition | statement ;
-statement            = flow | ( assignment, [ inline if ] ) | ( function call, [ inline if ] ) | ( event invoke, [ inline if ] ) | event function ;
+root statement         = function definition | object definition | event definition | statement ;
+statement              = flow | ( assignment, [ inline if ] ) | ( function call, [ inline if ] ) | ( event invoke, [ inline if ] ) | event function ;
 
-block                = assignment | function call | break | return | multi line block ;
-multi line block     = newline, statement, { newline, statement } ;
+block                  = assignment | function call | break | return | multi line block ;
+multi line block       = newline, statement, { newline, statement } ;
 
-function definition  = "function", function name, parameter list, block, end ;
-function name        = identifier | ( identifier, ".", identifier ) | function override ;
-function override    = identifier, ":", ( binary operator | identifier ) ;
-parameter list       = "(", [ identifier, { ",", identifier } ], ")" ;
+function definition    = "function", function name, parameter list, block, end ;
+function name          = identifier | ( identifier, ".", identifier ) | function override ;
+function override      = identifier, ":", ( binary operator | identifier ) ;
+parameter list         = "(", [ identifier, { ",", identifier } ], ")" ;
 
-object definition    = "object", identifier, variable list, [ "!" ] ;
-variable list        = "{", identifier, { ",", identifier }, "}" ;
+object definition      = "object", identifier, variable list, [ "!" ] ;
+variable list          = "{", identifier, { ",", identifier }, "}" ;
 
-event definition     = "event", identifier, ".", identifier ;
-event invoke         = "invoke", full identifier, ".", identifier, [ value list ] ;
-event function       = "on", full identifier, ".", identifier, event block ;
-event block          = ( "call", full identifier ) | ( [ "as", identifier ], "do", block, end ) ;
+event definition       = "event", identifier, ".", identifier ;
+event invoke           = "invoke", full identifier, ".", identifier, [ value list ] ;
+event function         = "on", full identifier, ".", identifier, event block ;
+event block            = ( "call", full identifier ) | ( [ "as", identifier ], "do", block, end ) ;
 
-flow                 = if block | for block | switch block | typeswitch block ;
+flow                   = if block | for block | switch block | typeswitch block ;
 
-if block             = ( "if" | "unless" ), [ assignment, "," ], condition, then block ;
-then block           = "then", block, { elseif block }, [ "else", block ], end ;
-elseif block         = "else if", condition, "then", block ;
+if block               = ( "if" | "unless" ), [ assignment, "," ], condition, then block ;
+then block             = "then", block, { elseif block }, [ "else", block ], end ;
+elseif block           = "else if", condition, "then", block ;
 
-inline if            = ( "if" | "unless" ), condition ;
+inline if              = ( "if" | "unless" ), condition ;
 
-for block            = "for", ( foreach expression | foruntil expression | for expression ), "do", block, end ;
-foreach expression   = identifier, [ ",", identifier ], "in", { identifier, "." }, identifier ;
-foruntil expression  = ( identifier | assignment ), "to",  condition, [ "by", expression ] ;
-for expression       = [ ( identifier | assignment ), "," ], expression, [ ",", ( assignment | function call ) ] ;
+for block              = "for", ( foreach expression | foruntil expression | for expression ), "do", block, end ;
+foreach expression     = identifier, [ ",", identifier ], "in", iterable ;
+iterable               = full identifier | list literal | string literal
+foruntil expression    = ( identifier | assignment ), "to", expression, [ "by", expression ] ;
+for expression         = [ ( identifier | assignment ), "," ], condition, [ ",", ( assignment | function call ) ] ;
 
-switch block         = "switch", expression, switch case, { switch case }, [ default case ], end ;
-switch case          = "case", literal, "do", block ;
-default case         = "default do", block ;
+switch block           = "switch", expression, switch case, { switch case }, [ default case ], end ;
+switch case            = "case", literal, "do", block ;
+default case           = "default do", block ;
 
-typeswitch block     = "typeswitch", expression, typeswitch case, { typeswitch case }, [ default case ], end ;
-typeswitch case      = "case", ( type literal | identifier ), "do", block ;
+typeswitch block       = "typeswitch", expression, typeswitch case, { typeswitch case }, [ default case ], end ;
+typeswitch case        = "case", ( type literal | identifier ), "do", block ;
 
-assignment           = equal assignment | unary assignment | binary assignment ;
-equal assignment     = full identifier, "=", expression ;
-unary assignment     = ( full identifier, ( "++" | "--" ) ) | ( ( "++" | "--" ), full identifier ) ;
-binary assignment    = full identifier, assignment operator, expression ;
+assignment             = equal assignment | unary assignment | binary assignment ;
+equal assignment       = full identifier, "=", expression ;
+unary assignment       = ( full identifier, ( "++" | "--" ) ) | ( ( "++" | "--" ), full identifier ) ;
+binary assignment      = full identifier, assignment operator, expression ;
 
-condition            = function call | full identifier | type check | ( expression, conditional operator, expression ) ;
+condition              = function call | full identifier | type check | conditional expression | unary condition | ( "(", condition, ")" ) ;
+conditional expression = expression, conditional operator, expression ;
+unary condition        = unary operator , condition ;
 
-expression           = function call | arithmetic | value | condition | ( unary operator, expression ) | ( "(", expression, ")" ) ;
-arithmetic           = expression, binary operator, expression ;
-type check           = expression, "is", ( type literal | identifier ) ;
+expression             = function call | arithmetic | value | condition | ( unary operator, expression ) | ( "(", expression, ")" ) ;
+arithmetic             = expression, binary operator, expression ;
+type check             = expression, "is", ( type literal | identifier ) ;
 
-function call        = full identifier, value list ;
-value list           = "(", [ expression, { ",", expression } ], ")" ;
+function call          = full identifier, value list ;
+value list             = "(", [ expression, { ",", expression } ], ")" ;
 
-value                = conditional value | literal | list | full identifier ;
-conditional value    = "if", condition, "then", expression, "else", expression ;
+value                  = conditional value | literal | list | full identifier ;
+conditional value      = "if", condition, "then", expression, "else", expression ;
 
-list                 = literal list | ( "[", [ expression, { ",", expression } ] "]" ) ;
-literal list         = "[", [ literal, { "," literal } ] "]" ;
+list                   = literal list | ( "[", [ expression, { ",", expression } ] "]" ) ;
+literal list           = "[", [ literal, { "," literal } ] "]" ;
 
-literal              = string literal | integer literal | float literal | boolean literal | "nil" ;
-string literal       = '"', { character }, '"' ;
-integer literal      = 0 | ( [ "-" ], natural number, { number } ) ;
-float literal        = [ "-" ], ( 0 | natural number, { number } ), ".", number, { number } ;
-boolean literal      = "true" | "false" ;
+literal                = string literal | integer literal | float literal | boolean literal | "nil" ;
+string literal         = '"', { character }, '"' ;
+integer literal        = 0 | ( [ "-" ], natural number, { number } ) ;
+float literal          = [ "-" ], ( 0 | natural number, { number } ), ".", number, { number } ;
+boolean literal        = "true" | "false" ;
 
-type literal         = "__string" | "__int" | "__float" | "__bool" | "__list" | "nil" ;
+type literal           = "__string" | "__int" | "__float" | "__bool" | "__list" | "nil" ;
 
-break                = "break" ;
-return               = "return", [ expression ] ;
+break                  = "break" ;
+return                 = "return", [ expression ] ;
 
-full identifier      = { identifier, "." }, identifier ;
-identifier           = alpha, { special alphanumeric }, [ "?" ] ;
+full identifier        = { identifier, "." }, identifier ;
+identifier             = alpha, { special alphanumeric }, [ "?" ] ;
 
-binary operator      = "+" | "-" | "/" | "*" | "%" | "<<" | ">>" | "^" ;
-unary operator       = "not" | "-" | "+" | "~" ;
-conditional operator = "==" | "<", ">", "<=", ">=", "!=" ;
-assignment operator  = "+=" | "-=" | "/=" | "*=" | "%=" | "<<=" | ">>=" | "^=" ;
+binary operator        = "+" | "-" | "/" | "*" | "%" | "<<" | ">>" | "^" ;
+unary operator         = "not" | "-" | "+" | "~" ;
+conditional operator   = "==" | "<", ">", "<=", ">=", "!=" ;
+assignment operator    = "+=" | "-=" | "/=" | "*=" | "%=" | "<<=" | ">>=" | "^=" ;
 
-alpha                = ? [A-Za-z] ? ;
-number               = ? [0-9] ? ;
-natural number       = ? [1-9] ? ;
-character            = ? any character (*) ?
-alphanumeric         = alpha | number ;
-special alphanumeric = alphanumeric | "_" ;
-end                  = "end" ;
-newline              = "\n", { "\n" } ;
+alpha                  = ? [A-Za-z] ? ;
+number                 = ? [0-9] ? ;
+natural number         = ? [1-9] ? ;
+character              = ? any character (*) ?
+alphanumeric           = alpha | number ;
+special alphanumeric   = alphanumeric | "_" ;
+end                    = "end" ;
+newline                = "\n", { "\n" } ;
 ```
 
 ### Useful links

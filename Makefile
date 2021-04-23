@@ -1,22 +1,25 @@
-out=bin/
-src=src/
-obj=$(out)obj/
+OUT=bin/
+OBJ=$(OUT)obj/
+SRC=src/
+INC=$(SRC)includes/
 
-cc=gcc
-ld=gcc
+CC=gcc -std=gnu99
 
-ccopts=-std=c++17
-ldopts=-lstdc++
+CCFLAGS=-O2 -Wall -Wextra
+LDFLAGS=
 
-$(out)kyanite: $(obj)kyanite.o
-	$(ld) -o $(out)kyanite $(obj)kyanite.o $(ldopts)
+$(OUT)kyanite: $(OBJ)kyanite.o $(OBJ)kylex.o
+	$(CC) -o $(OUT)kyanite $(OBJ)kyanite.o $(OBJ)kylex.o $(LDFLAGS)
 
-$(obj)kyanite.o: $(src)kyanite.cpp $(src)Lexer.cpp
-	$(cc) -o $(obj)kyanite.o -c $(src)kyanite.cpp $(ccopts)
+$(OBJ)kyanite.o: $(SRC)kyanite.c $(INC)kyanite.h $(INC)kylex.h
+	$(CC) -o $(OBJ)kyanite.o -c $(SRC)kyanite.c $(CCFLAGS)
+
+$(OBJ)kylex.o: $(SRC)kylex.c $(INC)kylex.h $(INC)kyanite.h
+	$(CC) -o $(OBJ)kylex.o -c $(SRC)kylex.c $(CCFLAGS)
 
 prepare:
-	mkdir -p $(obj)
+	mkdir -p $(OBJ)
 
 clean:
-	rm -f $(obj)*.o
-	rm -f $(obj)kyanite
+	rm -f $(OBJ)*.o
+	rm -f $(OUT)kyanite
