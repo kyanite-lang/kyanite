@@ -39,11 +39,11 @@ foruntil expression    = ( identifier | assignment ), "to", expression, [ "by", 
 for expression         = [ ( identifier | assignment ), "," ], condition, [ ",", ( assignment | function call ) ] ;
 
 switch block           = "switch", expression, switch case, { switch case }, [ default case ], end ;
-switch case            = "case", literal, "do", block ;
-default case           = "default do", block ;
+switch case            = "case", literal, block ;
+default case           = "default", block ;
 
 typeswitch block       = "typeswitch", expression, typeswitch case, { typeswitch case }, [ default case ], end ;
-typeswitch case        = "case", ( type literal | identifier ), "do", block ;
+typeswitch case        = "case", ( type literal | identifier ), block ;
 
 assignment             = equal assignment | unary assignment | binary assignment ;
 equal assignment       = full identifier, "=", expression ;

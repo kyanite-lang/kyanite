@@ -1,6 +1,8 @@
 #ifndef kylex_h
 #define kylex_h
 
+#include "kyanite.h"
+
 #include <stddef.h>
 #include <string.h>
 
@@ -54,12 +56,14 @@ ky_token_t ky_lexer_atom_at(ky_lexer_t *l, ky_token_type_t type, char *at);
 ky_token_t ky_lexer_range_get(ky_lexer_t *l, ky_token_type_t type, char *start);
 ky_token_t ky_lexer_range(ky_lexer_t *l, ky_token_type_t type, char *start);
 
-int is_space(char c);
-int is_alpha(char c);
-int is_digit(char c);
-int is_alpha_digit(char c);
-int is_natural_digit(char c);
-int is_special_alpha_digit(char c);
-int is_newline(char c);
+kbool is_space(char c);
+kbool is_alpha(char c);
+kbool is_digit(char c);
+kbool is_alpha_digit(char c);
+kbool is_natural_digit(char c);
+kbool is_special_alpha_digit(char c);
+kbool is_newline(char c);
+
+// TODO : parse-related functions
 
 #endif

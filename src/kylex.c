@@ -1,4 +1,4 @@
-#include "includes/kylex.h"
+#include "includes/kyparse.h"
 
 /**
  * ky_token_t functions
@@ -48,31 +48,31 @@ ky_token_t ky_lexer_string(ky_lexer_t *l, ky_token_type_t type, char *start) {
 /**
  * useful builtins
  **/
-int is_space(char c) {
+kbool is_space(char c) {
     if (c == ' ' || c == '\t') return 1;
     return 0;
 }
-int is_alpha(char c) {
+kbool is_alpha(char c) {
     if ((c >= 65 && c <= 90) || (c >= 97 && c <= 122)) return 1;
     return 0;
 }
-int is_digit(char c) {
+kbool is_digit(char c) {
     if (c >= 48 && c <= 57) return 1;
     return 0;
 }
-int is_alpha_digit(char c) {
+kbool is_alpha_digit(char c) {
     if (is_digit(c) || is_alpha(c)) return 1;
     return 0;
 }
-int is_natural_digit(char c) {
+kbool is_natural_digit(char c) {
     if (c >= 49 && c <= 57) return 1;
     return 0;
 }
-int is_special_alpha_digit(char c) {
+kbool is_special_alpha_digit(char c) {
     if (is_alpha_digit(c) || c == '_') return 1;
     return 0;
 }
-int is_newline(char c) {
+kbool is_newline(char c) {
     if (c == '\n' || c == '\r') return 1;
     return 0;
 }
