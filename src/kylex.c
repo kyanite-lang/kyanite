@@ -89,7 +89,7 @@ ky_token_t ky_lexer_next(ky_lexer_t *l) {
 
     if (is_newline(ky_lexer_peek(l))) {
         while (is_newline(ky_lexer_peek(l))) ky_lexer_get(l);
-        return ky_lexer_atom(l, Newline);
+        return ky_lexer_string(l, Newline, start);
     }
 
     switch (ky_lexer_peek(l)) {

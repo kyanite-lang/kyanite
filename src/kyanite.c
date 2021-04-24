@@ -30,6 +30,10 @@ int do_kyanite() {
             printf("unknown token\n");
             return -1;
         }
+        if (t.type == Newline) {
+            printf("[\\n] ");
+            continue;
+        }
         char tok_str[t.snippet.length + 1];
         memset(tok_str, '\0', sizeof(tok_str));
         memcpy(tok_str, t.snippet.start, t.snippet.length);
