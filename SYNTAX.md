@@ -38,7 +38,7 @@ iterable               = full identifier | list literal | string literal
 foruntil expression    = ( identifier | assignment ), "to", expression, [ "by", expression ] ;
 for expression         = [ ( identifier | assignment ), "," ], condition, [ ",", ( assignment | function call ) ] ;
 
-switch block           = "switch", expression, switch case, { switch case }, [ default case ], end ;
+switch block           = "switch", expression, "do", switch case, { switch case }, [ default case ], end ;
 switch case            = "case", literal, block ;
 default case           = "default", block ;
 
@@ -133,12 +133,12 @@ end
 #### Switch
 ```
 fruit = getFavouriteFruit()
-switch fruit
-case "banana" do
+switch fruit do
+case "banana"
     print("Monkies love bananas!")
-case "apple" do
+case "apple"
     print("Donkies love apples!")
-default do
+default
     print("I've not heard of that...")
 end
 ```
@@ -164,12 +164,12 @@ There's a special `typeswitch` keyword that will act as a switch that checks typ
 ```
 object Person { name }
 thing = someFunction()
-typeswitch thing
-case __string do
+typeswitch thing do
+case __string
     print("The string says", thing)
-case Person do
+case Person
     print("A person! Hello,", thing.name)
-default do
+default
     print("It's something else...")
 end
 ```
