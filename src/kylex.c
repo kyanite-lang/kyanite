@@ -1,248 +1,244 @@
-#include "includes/kyparse.h"
+#include "includes/kylex.h"
+#include "includes/kystate.h"
+#include "includes/kystring.h"
 
-/**
- * ky_token_t functions
- **/
-ky_token_t ky_token(ky_token_type_t type, char *start, size_t length) {
-    return (ky_token_t) { type, { start, length } };
-}
+#include <string.h>
 
-ky_token_t ky_token_char(ky_token_type_t type, char *start, char *end) {
-    return (ky_token_t) { type, { start, (end-start) } };
-}
+#define knextch(p)     (p->current = kbs_getch(&p->kbs))
+#define kswallow(p, t) knextch(p); return t
+#define knextswitch(p) knextch(p); switch(p->current)
 
-/**
- * ky_lexer_t functions
- **/
-ky_lexer_t ky_lexer(char* stream) {
-    return (ky_lexer_t){ stream };
-}
+#define KINIT_BUFF_CHECK 128
 
-char ky_lexer_peek(ky_lexer_t *l) {
-    return *(l->stream);
-}
+/* token names - these must be in the order as defined in kylex.h */
+static const char *const ktok_strings [] = {
+    /* keywords */
+    "function", "object", "event", "invoke", "on", "as", "do", "end", "for",
+    "in", "to", "by", "if", "unless", "then", "else", "break", "continue", 
+    "return", "switch", "typeswitch", "default", "is", "not", "true",
+    "false", "nil",
+    /* operators & other */
+    "==", ">=", "<=", "<<", ">>", "+=", "-=", "/=", "*=", "%=", "^=",
+    "++", "--", "<eof>",
+    "<integer>", "<float>", "<string>", "<type>", "<identifier>"
+};
 
-char ky_lexer_get(ky_lexer_t *l) {
-    return *(l->stream++);
-}
+/* type names - these must be in the order as defined in kyanite.h */
+static const char *const ktok_types[] = {
+    "__int", "__float", "__bool", "__string", "__list"
+};
 
-/**
- * ky_lexer_t token-builders
- **/
-ky_token_t ky_lexer_atom_get(ky_lexer_t *l, ky_token_type_t type) {
-    return ky_token(type, l->stream++, 1);
-}
-ky_token_t ky_lexer_atom(ky_lexer_t *l, ky_token_type_t type) {
-    return ky_token(type, l->stream, 1);
-}
-ky_token_t ky_lexer_atom_at(ky_lexer_t *l, ky_token_type_t type, char *at) {
-    return ky_token(type, at, 1);
-}
-ky_token_t ky_lexer_string_get(ky_lexer_t *l, ky_token_type_t type, char *start) {
-    return ky_token_char(type, start, l->stream++);
-}
-ky_token_t ky_lexer_string(ky_lexer_t *l, ky_token_type_t type, char *start) {
-    return ky_token_char(type, start, l->stream);
+static void ky_syntax_error(ky_parse_t *p, const char *msg) {
+    ky_errorf(p->k, KY_ERR_SYN, "syntax error on line %d:\n%s", p->linenum, msg);
 }
 
-/**
- * useful builtins
- **/
-kbool is_space(char c) {
-    if (c == ' ' || c == '\t') return KTRUE;
-    return KFALSE;
-}
-kbool is_alpha(char c) {
-    if ((c >= 65 && c <= 90) || (c >= 97 && c <= 122)) return KTRUE;
-    return KFALSE;
-}
-kbool is_digit(char c) {
-    if (c >= 48 && c <= 57) return KTRUE;
-    return KFALSE;
-}
-kbool is_alpha_digit(char c) {
-    if (is_digit(c) || is_alpha(c)) return KTRUE;
-    return KFALSE;
-}
-kbool is_natural_digit(char c) {
-    if (c >= 49 && c <= 57) return KTRUE;
-    return KFALSE;
-}
-kbool is_special_alpha_digit(char c) {
-    if (is_alpha_digit(c) || c == '_') return KTRUE;
-    return KFALSE;
-}
-kbool is_newline(char c) {
-    if (c == '\n' || c == '\r') return KTRUE;
-    return KFALSE;
+static void ky_syntax_errorf(ky_parse_t *p, const char *expect, char got) {
+    ky_errorf(p->k, KY_ERR_SYN, "syntax error on line %d:\nexpecting %s, instead got %c", p->linenum, expect, got);
 }
 
-/**
- * the actual parse!
- **/
-ky_token_t ky_lexer_next(ky_lexer_t *l) {
-    while (is_space(ky_lexer_peek(l))) ky_lexer_get(l);
+static ktt_t ky_parse_next_number(ky_parse_t *p, kts_u *sem) {
+    if (!(_lex_is_digit(p->current))) {
+        ky_syntax_errorf(p, "number", p->current);
+    }
+    ky_buffer_grow(p->k, KINIT_BUFF_CHECK);
+    ky_syntax_error(p, "NUMBERS NOT YET IMPLEMENTED! SORRY!");
+    /* TODO parse numbers */ KUNUSED(sem); return 0;
+}
 
-    if (ky_lexer_peek(l) == '\0') return ky_lexer_atom(l, EndOfStream);
+static ktt_t ky_parse_next_string(ky_parse_t *p, kts_u *sem) {
+    if (p->current != '"') {
+        ky_syntax_errorf(p, "string", p->current);
+    }
+    ky_buffer_grow(p->k, KINIT_BUFF_CHECK);
+    knextch(p);
+    size_t i = 0;
+    while(p->current != '"') {
+        if (p->current == KBS_EOS) {
+            ky_syntax_error(p, "end of file reached inside string literal");
+            break;
+        }
+        ky_buffer_putch(p->k, i++, p->current);
+        knextch(p);
+    }
+    if (p->current != '"') {
+        ky_syntax_errorf(p, "end of string", p->current);
+    }
+    ky_buffer_putch(p->k, i, '\0');
+    ky_string_t *str = ky_string_create(p->k, p->k->buffer);
+    sem->s = str;
+    return tk_STRING;
+}
 
-    char *start = l->stream;
+static ktt_t ky_parse_next_type(ky_parse_t *p, kts_u *sem) {
+    ky_buffer_grow(p->k, KINIT_BUFF_CHECK);
+    size_t i = 0;
+    if (p->current != '_') {
+        ky_syntax_errorf(p, "type name", p->current);
+    }
+    ky_buffer_putch(p->k, i++, '_');
+    knextch(p);
+    if (p->current != '_') {
+        ky_syntax_errorf(p, "type name", p->current);
+    }
+    ky_buffer_putch(p->k, i++, '_');
+    knextch(p);
+    while (_lex_is_alpha(p->current)) {
+        ky_buffer_putch(p->k, i++, p->current);
+        knextch(p);
+    }
+    if (i == 0) {
+        ky_syntax_errorf(p, "type name", p->current);
+    }
+    ky_buffer_putch(p->k, i, '\0');
+    ky_string_t* str = ky_string_find(p->k, p->k->buffer);
+    if (str != NULL && _kstr_typename(str)) {
+        sem->s = str;
+        return tk_TYPE;
+    } else {
+        ky_syntax_error(p, "expected type name");
+    }
+    return 0;
+}
 
-    if (is_newline(ky_lexer_peek(l))) {
-        while (is_newline(ky_lexer_peek(l))) ky_lexer_get(l);
-        return ky_lexer_string(l, Newline, start);
+static ktt_t ky_parse_next_ident(ky_parse_t *p, kts_u *sem) {
+    if (!(_lex_is_alpha(p->current))) {
+        ky_syntax_errorf(p, "identifier", p->current);
+    }
+    ky_buffer_grow(p->k, KINIT_BUFF_CHECK);
+    size_t i = 0;
+    do {
+        ky_buffer_putch(p->k, i++, p->current);
+        knextch(p);
+    } while (_lex_is_special_alpha_digit(p->current));
+    if (p->current == '?') {
+        ky_buffer_putch(p->k, i++, '?');
+        knextch(p);
+    }
+    ky_buffer_putch(p->k, i++, '\0');
+    
+    ky_string_t *str = ky_string_create(p->k, p->k->buffer);
+    sem->s = str;
+    if (_kstr_keyword(str)) {
+        /* return the token corresponding to the keyword string's reserved byte */
+        return FIRST_TOK_DEF + str->extra;
+    }
+    /* otherwise, return ident as normal */
+    return tk_IDENT;
+}
+
+static void skip_newline(ky_parse_t *p) {
+    knextch(p);
+    ++p->linenum;
+    /* TODO: catch too many lines */
+}
+
+void ky_parse_start(ky_parse_t *p, FILE *f) {
+    kbs_fopen(&p->kbs, f);
+    p->linenum = 1;
+    for(int i = 0; i < NUM_TOK_KEYWORDS; i++) {
+        ky_string_t *ks = ky_string_create(p->k, ktok_strings[i]);
+        ks->special = KSTR_KEYWORD;
+        ks->extra   = i;
+    }
+    for(int i = 0; i < KY_NUMCHECKABLE_TYPES; i++) {
+        ky_string_t *ks = ky_string_create(p->k, ktok_types[i]);
+        ks->special = KSTR_TYPENAME;
+        ks->extra = KY_FIRST_CHECKABLE_TYPE + i;
+    }
+}
+
+void ky_parse_finish(ky_parse_t *p) {
+    if (p->kbs.status == KBS_GOOD)
+        kbs_close(&p->kbs);
+}
+
+ktt_t ky_parse_next(ky_parse_t *p, kts_u *sem) {
+    while (_lex_is_space(p->current)) knextch(p);
+
+    if (p->current == KBS_EOS || p->current == '\0')
+        return tk_EOS;
+
+    if (_lex_is_newline(p->current)) {
+        while(_lex_is_newline(p->current)) skip_newline(p);
+        return '\n';
     }
 
-    switch (ky_lexer_peek(l)) {
-        case '(': return ky_lexer_atom_get(l, LeftParen);
-        case ')': return ky_lexer_atom_get(l, RightParen);
-        case '[': return ky_lexer_atom_get(l, LeftList);
-        case ']': return ky_lexer_atom_get(l, RightList);
-        case '{': return ky_lexer_atom_get(l, LeftVars);
-        case '}': return ky_lexer_atom_get(l, RightVars);
-        case ',': return ky_lexer_atom_get(l, Comma);
-        case '.': return ky_lexer_atom_get(l, Dot);
-        case ':': return ky_lexer_atom_get(l, Colon);
-        case '~': return ky_lexer_atom_get(l, InverseOp);
+    switch(p->current) {
+        case '(': case ')': case '[': case ']':
+        case '{': case '}': case ',': case '.':
+        case ':': case '~':
+            kswallow(p, p->current);
         case '+':
-            ky_lexer_get(l);
-            switch (ky_lexer_peek(l)) {
-                case '+': return ky_lexer_string_get(l, PlusPlus, start);
-                case '=': return ky_lexer_string_get(l, PlusEqual, start);
+            knextswitch(p) {
+                case '+': kswallow(p, tk_INC);
+                case '=': kswallow(p, tk_ADDEQ);
+                default:  return '+';
             }
-            return ky_lexer_atom(l, Plus);
         case '-':
-            ky_lexer_get(l);
-            switch (ky_lexer_peek(l)) {
-                case '-': return ky_lexer_string_get(l, MinusMinus, start);
-                case '=': return ky_lexer_string_get(l, MinusEqual, start);
+            knextswitch(p) {
+                case '-': kswallow(p, tk_DEC);
+                case '=': kswallow(p, tk_MINEQ);
+                default:  return '-';
             }
-            return ky_lexer_atom_at(l, Minus, start);
         case '/':
-            ky_lexer_get(l);
-            if (ky_lexer_peek(l) == '=') return ky_lexer_string_get(l, DivideEqual, start);
-            return ky_lexer_atom_at(l, Divide, start);
+            knextswitch(p) {
+                case '=': kswallow(p, tk_DIVEQ);
+                default:  return '/';
+            }
         case '*':
-            ky_lexer_get(l);
-            if (ky_lexer_peek(l) == '=') return ky_lexer_string_get(l, MultiplyEqual, start);
-            return ky_lexer_atom_at(l, Multiply, start);
+            knextswitch(p) {
+                case '=': kswallow(p, tk_MULEQ);
+                default:  return '*';
+            }
         case '%':
-            ky_lexer_get(l);
-            if (ky_lexer_peek(l) == '=') return ky_lexer_string_get(l, ModuloEqual, start);
-            return ky_lexer_atom_at(l, Modulo, start);
+            knextswitch(p) {
+                case '=': kswallow(p, tk_MODEQ);
+                default:  return '%';
+            }
         case '^':
-            ky_lexer_get(l);
-            if (ky_lexer_peek(l) == '=') return ky_lexer_string_get(l, PowerEqual, start);
-            return ky_lexer_atom_at(l, Power, start);
+            knextswitch(p) {
+                case '=': kswallow(p, tk_POWEQ);
+                default:  return '^';
+            }
         case '<':
-            ky_lexer_get(l);
-            switch (ky_lexer_peek(l)) {
+            knextswitch(p) {
                 case '<':
-                    ky_lexer_get(l);
-                    if (ky_lexer_peek(l) == '=') return ky_lexer_string_get(l, LeftShiftEqual, start);
-                    return ky_lexer_atom_at(l, LeftShift, start);
-                case '=': return ky_lexer_string_get(l, LessThanOrEqual, start);
+                    knextswitch(p) {
+                        case '=': kswallow(p, tk_SHLEQ);
+                        default:  return tk_SHL;
+                    }
+                case '=': kswallow(p, tk_LTE);
+                default:  return '<';
             }
-            return ky_lexer_atom_at(l, LessThan, start);
         case '>':
-            ky_lexer_get(l);
-            switch (ky_lexer_peek(l)) {
+            knextswitch(p) {
                 case '>':
-                    ky_lexer_get(l);
-                    if (ky_lexer_peek(l) == '=') return ky_lexer_string_get(l, RightShiftEqual, start);
-                    return ky_lexer_atom_at(l, RightShift, start);
-                case '=': return ky_lexer_string_get(l, GreaterThanOrEqual, start);
+                    knextswitch(p) {
+                        case '=': kswallow(p, tk_SHREQ);
+                        default:  return tk_SHR;
+                    }
+                case '=': kswallow(p, tk_GTE);
+                default:  return '>';
             }
-            return ky_lexer_atom_at(l, GreaterThan, start);
         case '=':
-            ky_lexer_get(l);
-            if (ky_lexer_peek(l) == '=') return ky_lexer_string_get(l, EqualEqual, start);
-            return ky_lexer_atom_at(l, Equal, start);
-        case '!':
-            ky_lexer_get(l);
-            if (ky_lexer_peek(l) == '=') return ky_lexer_string_get(l, NotEqual, start);
-            return ky_lexer_atom_at(l, Bang, start);
-        case '_':
-            ky_lexer_get(l);
-            if (ky_lexer_peek(l) == '_') {
-                ky_lexer_get(l);
-                while (is_alpha(ky_lexer_peek(l))) ky_lexer_get(l);
-                size_t typestring_length = l->stream - start;
-                char typestring[typestring_length + 1];
-                memset(typestring, '\0', sizeof(typestring));
-                memcpy(typestring, start, typestring_length);
-                if (strcmp(typestring, "__list") == 0 || strcmp(typestring, "__int") == 0 ||
-                    strcmp(typestring, "__bool") == 0 || strcmp(typestring, "__float") == 0 ||
-                    strcmp(typestring, "__string") == 0) {
-                    return ky_lexer_string(l, Typename, start);
-                }
+            knextswitch(p) {
+                case '=': kswallow(p, tk_EQ);
+                default:  return '=';
             }
-            return ky_lexer_string_get(l, Unknown, start);
+        case '!':
+            knextswitch(p) {
+                case '=': kswallow(p, tk_NEQ);
+                default:  return '!';
+            }
+        case '_':
+            return ky_parse_next_type(p, sem);
+        case '"':
+            return ky_parse_next_string(p, sem);
     }
 
-    if (ky_lexer_peek(l) == '"') {
-        ky_lexer_get(l);
-        while(ky_lexer_peek(l) != '"' && ky_lexer_peek(l) != '\0') {
-            ky_lexer_get(l);
-        }
-        if (ky_lexer_peek(l) == '"') return ky_lexer_string_get(l, StringLiteral, start);
-        return ky_lexer_string(l, Unknown, start);
-    }
+    if (_lex_is_digit(p->current)) return ky_parse_next_number(p, sem);
+    if (_lex_is_alpha(p->current)) return ky_parse_next_ident(p, sem);
 
-    if (ky_lexer_peek(l) == '0') {
-        ky_lexer_get(l);
-        if (ky_lexer_peek(l) != '.') return ky_lexer_atom_at(l, IntLiteral, start);
-        ky_lexer_get(l);
-        if (!is_digit(ky_lexer_peek(l))) return ky_lexer_string(l, Unknown, start);
-        while(is_digit(ky_lexer_peek(l))) ky_lexer_get(l);
-        return ky_lexer_string(l, FloatLiteral, start);
-    }
-
-    if (is_digit(ky_lexer_peek(l))) {
-        ky_lexer_get(l);
-        if (ky_lexer_peek(l) == '.') {
-            ky_lexer_get(l);
-            if (!is_digit(ky_lexer_peek(l))) return ky_lexer_string(l, Unknown, start);
-            while(is_digit(ky_lexer_peek(l))) ky_lexer_get(l);
-            return ky_lexer_string(l, FloatLiteral, start);
-        }
-        if (is_digit(ky_lexer_peek(l))) {
-            while (is_digit(ky_lexer_peek(l))) ky_lexer_get(l);
-        }
-        return ky_lexer_string(l, IntLiteral, start);
-    }
-
-    if (is_alpha(ky_lexer_peek(l))) {
-        ky_lexer_get(l);
-        while(is_special_alpha_digit(ky_lexer_peek(l))) ky_lexer_get(l);
-        if (ky_lexer_peek(l) == '?') ky_lexer_get(l);
-        size_t ident_length = l->stream - start;
-        char ident[ident_length + 1];
-        memset(ident, '\0', sizeof(ident));
-        memcpy(ident, start, ident_length);
-        if (strcmp(ident, "function") == 0)   return ky_lexer_string(l, Function, start);
-        if (strcmp(ident, "object") == 0)     return ky_lexer_string(l, Object, start);
-        if (strcmp(ident, "event") == 0)      return ky_lexer_string(l, Event, start);
-        if (strcmp(ident, "invoke") == 0)     return ky_lexer_string(l, Invoke, start);
-        if (strcmp(ident, "on") == 0)         return ky_lexer_string(l, On, start);
-        if (strcmp(ident, "do") == 0)         return ky_lexer_string(l, Do, start);
-        if (strcmp(ident, "end") == 0)        return ky_lexer_string(l, End, start);
-        if (strcmp(ident, "for") == 0)        return ky_lexer_string(l, For, start);
-        if (strcmp(ident, "in") == 0)         return ky_lexer_string(l, In, start);
-        if (strcmp(ident, "to") == 0)         return ky_lexer_string(l, To, start);
-        if (strcmp(ident, "by") == 0)         return ky_lexer_string(l, By, start);
-        if (strcmp(ident, "if") == 0)         return ky_lexer_string(l, If, start);
-        if (strcmp(ident, "unless") == 0)     return ky_lexer_string(l, Unless, start);
-        if (strcmp(ident, "then") == 0)       return ky_lexer_string(l, Then, start);
-        if (strcmp(ident, "else") == 0)       return ky_lexer_string(l, Else, start);
-        if (strcmp(ident, "break") == 0)      return ky_lexer_string(l, Break, start);
-        if (strcmp(ident, "return") == 0)     return ky_lexer_string(l, Return, start);
-        if (strcmp(ident, "switch") == 0)     return ky_lexer_string(l, Switch, start);
-        if (strcmp(ident, "typeswitch") == 0) return ky_lexer_string(l, Typeswitch, start);
-        if (strcmp(ident, "default") == 0)    return ky_lexer_string(l, Default, start);
-        if (strcmp(ident, "nil") == 0)        return ky_lexer_string(l, Nil, start);
-        if (strcmp(ident, "true") == 0 || strcmp(ident, "false") == 0) return ky_lexer_string(l, BooleanLiteral, start);
-        return ky_lexer_string(l, Identifier, start);
-    }
-
-    return ky_lexer_atom_get(l, Unknown);
+    ky_syntax_error(p, "unrecognized token");
+    return 0;
 }

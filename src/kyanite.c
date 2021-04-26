@@ -1,7 +1,6 @@
 #include "includes/kyanite.h"
-#include "includes/kyparse.h"
-
-#define FILE_MAX 1024*1024*1024
+#include "includes/kystate.h"
+#include "includes/kylib.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -25,65 +24,11 @@ void print_bad_output() {
     printf("%s\n", KY_OUT_ERR);
 }
 
-char* load_file(char *filename) {
-    char *buffer;
-    size_t file_length;
-    size_t read_length;
-    FILE *file = fopen(filename, "r");
-    if (file) {
-        fseek(file, 0, SEEK_END);
-        file_length = ftell(file);
-        fseek(file, 0, SEEK_SET);
-
-        if (file_length > FILE_MAX) {
-            return NULL;
-        }
-
-        buffer = (char*)malloc(file_length + 1);
-        if (file_length) {
-            read_length = fread(buffer, sizeof(char), file_length, file);
-
-            if (read_length != file_length) {
-                fclose(file);
-                free(buffer);
-                return NULL;
-            }
-        }
-
-        fclose(file);
-        buffer[file_length] = '\0';
-        return buffer;
-    } else {
-        return NULL;
-    }
-}
-
 int do_kyanite(char *filename) {
-    char *file = load_file(filename);
-    if (file == NULL) {
-        print_bad_output();
-        printf("could not open that file\n");
-        return -1;
-    }
-    ky_lexer_t lexer = ky_lexer(file);
-    for(ky_token_t t = ky_lexer_next(&lexer); t.type != EndOfStream; t = ky_lexer_next(&lexer)) {
-        if (t.type == Unknown) {
-            print_bad_output();
-            printf("unknown token\n");
-            return -1;
-        }
-        if (t.type == Newline) {
-            printf("[\\n] ");
-            continue;
-        }
-        char tok_str[t.snippet.length + 1];
-        memset(tok_str, '\0', sizeof(tok_str));
-        memcpy(tok_str, t.snippet.start, t.snippet.length);
-        printf("`%s` ", tok_str);
-    }
-    free(file);
-    printf("\n");
-    print_good_output();
+    ky_state_t *k = ky_state_new();
+    _kyanite_read_file(k, filename);
+    ky_debugf(k, "%ld/%ld hashtable entries. %ld objects. %ldB total memory.", k->htable.n_hash, k->htable.m_hash, k->n_all, k->m_total);
+    ky_state_free(k);
     return 0;
 }
 

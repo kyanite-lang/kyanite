@@ -8,20 +8,24 @@ CC=gcc -std=gnu99
 CCFLAGS=-O2 -Wall -Wextra
 LDFLAGS=
 
-HEADERS=$(INC)kyanite.h $(INC)kyparse.h $(INC)kyobject.h
+HEADERS=$(wildcard $(INC)*.h)
+SRCS=$(wildcard $(SRC)*.c)
+OBJS=$(SRCS:$(SRC)%.c=$(OBJ)%.o)
 
-$(OUT)kyanite: $(OBJ)kyanite.o $(OBJ)kylex.o
-	$(CC) -o $(OUT)kyanite $(OBJ)kyanite.o $(OBJ)kylex.o $(LDFLAGS)
+FIN=$(OUT)kyanite
 
-$(OBJ)kyanite.o: $(SRC)kyanite.c $(HEADERS)
-	$(CC) -o $(OBJ)kyanite.o -c $(SRC)kyanite.c $(CCFLAGS)
+all: $(FIN)
 
-$(OBJ)kylex.o: $(SRC)kylex.c $(HEADERS)
-	$(CC) -o $(OBJ)kylex.o -c $(SRC)kylex.c $(CCFLAGS)
+$(FIN): $(OBJS)
+	$(CC) -o $@ $(LDFLAGS) $^
+
+$(OBJ)%.o: $(SRC)%.c
+	$(CC) -o $@ $(CCFLAGS) -c $<
+
+.PHONY: prepare clean
 
 prepare:
 	mkdir -p $(OBJ)
 
 clean:
-	rm -f $(OBJ)*.o
-	rm -f $(OUT)kyanite
+	rm -f $(OBJ)*.o $(OUT)kyanite

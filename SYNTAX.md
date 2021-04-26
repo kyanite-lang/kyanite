@@ -8,7 +8,7 @@ program                = [ root statement, { newline, root statement } ] ;
 root statement         = function definition | object definition | event definition | statement ;
 statement              = flow | ( assignment, [ inline if ] ) | ( function call, [ inline if ] ) | ( event invoke, [ inline if ] ) | event function ;
 
-block                  = assignment | function call | break | return | multi line block ;
+block                  = assignment | function call | break | continue | return | multi line block ;
 multi line block       = newline, statement, { newline, statement } ;
 
 function definition    = "function", function name, parameter list, block, end ;
