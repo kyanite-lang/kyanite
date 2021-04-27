@@ -43,7 +43,7 @@ typedef struct {
 enum TOK_DEF {
     /* start with keywords */
     tk_FUNCTION = FIRST_TOK_DEF, tk_OBJECT, tk_EVENT, tk_INVOKE, tk_ON, tk_AS,
-    tk_DO, tk_END, tk_FOR, tk_IN, tk_TO, tk_BY, tk_IF, tk_UNLESS, tk_THEN,
+    tk_CALL, tk_DO, tk_END, tk_FOR, tk_IN, tk_TO, tk_BY, tk_IF, tk_UNLESS, tk_THEN,
     tk_ELSE, tk_BREAK, tk_CONTINUE, tk_RETURN, tk_SWITCH, tk_TYPESWITCH, tk_DEFAULT,
     tk_IS, tk_NOT, tk_TRUE, tk_FALSE, tk_NIL,
     /* then go on to symbols */

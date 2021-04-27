@@ -13,8 +13,8 @@
 /* token names - these must be in the order as defined in kylex.h */
 static const char *const ktok_strings [] = {
     /* keywords */
-    "function", "object", "event", "invoke", "on", "as", "do", "end", "for",
-    "in", "to", "by", "if", "unless", "then", "else", "break", "continue", 
+    "function", "object", "event", "invoke", "on", "as", "call", "do", "end",
+    "for", "in", "to", "by", "if", "unless", "then", "else", "break", "continue", 
     "return", "switch", "typeswitch", "default", "is", "not", "true",
     "false", "nil",
     /* operators & other */
