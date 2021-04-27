@@ -3,8 +3,19 @@
 
 #include "kyanite.h"
 
-/* common GC-able object header to allow inter-conversion */
-#define k_object_header struct ky_object_t *next; kbyte type;
+/**
+ * common header for GC-able objects
+ * next = next object in o_all list
+ * type = object type
+ * gcm  = status of GC (black/grey/white)
+ **/
+#define k_object_header struct ky_object_t *next; \
+                        kbyte type; \
+                        kbyte gcm;
+
+#define KY_GCM_BLACK  0 /* do not collect */
+#define KY_GCM_GREY   1 /* do not collect; scan for references */
+#define KY_GCM_WHITE  2 /* collectable */
 
 /**
  * Represents a GC-able object
@@ -36,12 +47,12 @@ typedef struct ky_string_t {
 #define kstr(s) ((s)->cs)
 
 /* string markers (first 8 bits) */
-#define KSTR_STATIC   1
-#define KSTR_KEYWORD  2
-#define KSTR_TYPENAME 3
+#define KSTR_EXEMPT   2 /* generically exempt from GC */
+#define KSTR_KEYWORD  3 /* language keyword */
+#define KSTR_TYPENAME 4 /* language typename */
 
 /* macro for checking if a string is GC-able */
-#define _kstr_collectable(s) ((s)->special < KSTR_STATIC)
+#define _kstr_collectable(s) ((s)->special < KSTR_EXEMPT)
 
 /* macro for checking if a string is a reserved keyword */
 #define _kstr_keyword(s) ((s)->special == KSTR_KEYWORD)

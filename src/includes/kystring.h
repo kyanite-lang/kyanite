@@ -13,8 +13,10 @@ typedef struct ky_htable_t {
 } ky_htable_t;
 
 void ky_htable_init(ky_state_t *k);
+void ky_htable_free(ky_state_t *k);
 void ky_htable_resize(ky_state_t *k, size_t newsize);
-void ky_htable_add(ky_state_t *k, ky_string_t *s, khash h);
+void ky_htable_shrink(ky_state_t *k);
+void ky_htable_add(ky_state_t *k, ky_string_t *s);
 void ky_htable_remove(ky_state_t *k, ky_string_t *s);
 
 ky_string_t* ky_string_create(ky_state_t* k, const char *str);

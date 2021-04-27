@@ -27,8 +27,7 @@ void print_bad_output() {
 int do_kyanite(char *filename) {
     ky_state_t *k = ky_state_new();
     _kyanite_read_file(k, filename);
-    ky_debugf(k, "%ld/%ld hashtable entries. %ld objects. %ldB total memory.", k->htable.n_hash, k->htable.m_hash, k->n_all, k->m_total);
-    ky_state_free(k);
+    ky_state_close(k);
     return 0;
 }
 

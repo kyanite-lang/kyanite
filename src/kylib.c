@@ -10,7 +10,6 @@ void _kyanite_require_version(ky_state_t *k, kint version) {
 }
 
 void _kyanite_read_file(ky_state_t *k, const char *filename) {
-    KUNUSED(k);
     FILE *f = fopen(filename, "r");
     ky_parse_t p;
     p.k = k;
