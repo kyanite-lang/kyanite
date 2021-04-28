@@ -1,0 +1,30 @@
+# This test does not pass yet.
+object Account { name, balance }
+event Account.transaction
+
+function Account:new(name)
+    this.name = name
+    this.balance = 0
+end
+
+function Account.deposit(amount)
+    this.balance += amount
+    invoke this.transaction(amount)
+end
+
+function Account.withdraw(amount)
+    this.balance -= amount
+    invoke this.transaction(-amount)
+end
+
+acct = new Account("Janice")
+on acct.transaction as tx do
+    print("This transaction is", if tx < 0 then "negative" else "positive")
+end
+
+acct.deposit(500)
+acct.withdraw(150)
+
+print("This account belongs to", acct.name, "and contains", acct.balance, "dollars.")
+print("What type is the balance, you ask? Why, it's...")
+printType(acct.balance)
