@@ -155,6 +155,11 @@ void ky_parse_finish(ky_parse_t *p) {
 ktt_t ky_parse_next(ky_parse_t *p, kts_u *sem) {
     while (_lex_is_space(p->current)) knextch(p);
 
+    if (p->current == '#') {
+        while (!(_lex_is_newline(p->current)) && p->current != KBS_EOS)
+            knextch(p);
+    }
+
     if (p->current == KBS_EOS || p->current == '\0')
         return tk_EOS;
 
