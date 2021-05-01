@@ -1,10 +1,30 @@
 #include "includes/kystate.h"
 #include "includes/kymem.h"
 #include "includes/kygc.h"
+#include "includes/kyexec.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
+
+#define NUM_GLOBAL_STR_VARS 2
+static const char * const global_str_variable_keys[] = { "ky_VERSION_PRETTY", "ky_VERSION" };
+static const char * const global_str_variable_vars[] = { KY_VERSION_FULL, KY_VERSION_NUMSTR };
+#define NUM_GLOBAL_INT_VARS 1
+static const char * const global_int_variable_keys[] = { "ky_VERSION_NUM" };
+static const int global_int_variable_vars[] = { KY_VERSION_NUM };
+
+static void initialize_global_variables(ky_state_t* k) {
+    for(kmem i = 0; i < NUM_GLOBAL_STR_VARS; i++) {
+        ky_string_t* key = ky_string_create(k, global_str_variable_keys[i]);
+        ky_string_t* var = ky_string_create(k, global_str_variable_vars[i]);
+        ky_scope_variable_add(k, k->global, key, _kv_str_new(var));
+    }
+    for (kmem i = 0; i < NUM_GLOBAL_INT_VARS; i++) {
+        ky_string_t* key = ky_string_create(k, global_int_variable_keys[i]);
+        ky_scope_variable_add(k, k->global, key, _kv_int_new(global_int_variable_vars[i]));
+    }
+}
 
 ky_state_t* ky_state_new() {
     /* use malloc only here as state doesn't exist yet and
@@ -21,6 +41,9 @@ ky_state_t* ky_state_new() {
     k->buffer = NULL;
     /* initialize hash table */
     ky_htable_init(k);
+    /* initialize globals and set values */
+    k->global = ky_scope_new(k, NULL);
+    initialize_global_variables(k);
     /* set status to good */
     k->status = KY_GOOD;
     return k;
@@ -30,6 +53,7 @@ void ky_state_close(ky_state_t* k) {
     ky_gc_collect(k, KY_GC_COLLECTION_ALL);
     ky_buffer_free(k);
     ky_htable_free(k);
+    ky_scope_free(k, k->global);
     /* use built-in free here as freeing ky_state_t
        and we can't be sure ky_alloc won't want to use it */
     free(k);

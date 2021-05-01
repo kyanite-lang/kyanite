@@ -57,9 +57,6 @@ enum TOK_DEF {
 /* number of token keywords */
 #define NUM_TOK_KEYWORDS (cast(int, (tk_NIL - FIRST_TOK_DEF + 1)))
 
-/* max chars in a reserved keyword (+1 for final \0) */
-#define MAX_TOKEN_LEN 12
-
 /**
  * holds state of lex/parse
  **/
@@ -67,11 +64,23 @@ typedef struct ky_parse_t {
     ky_state_t *k;       /* main kyanite state */
     char        current; /* current character */
     int         linenum; /* current line number */
+    ktt_t       tok;     /* current token */
+    kts_u       sem;     /* current semantic informatino */
     kbs_t       kbs;     /* input stream */
 } ky_parse_t;
 
-void ky_parse_start(ky_parse_t *k, FILE *f);
-ktt_t ky_parse_next(ky_parse_t *p, kts_u *sem);
+/**
+ * kylex.c
+ **/
+void ky_parse_init(ky_parse_t *p, FILE *f);
+ktt_t ky_lex(ky_parse_t *p, kts_u *sem);
+
+/**
+ * kyparse.c
+ **/
+void ky_parse_all(ky_parse_t* p);
+
+const char *ktok2str(ktt_t tok);
 
 /**
  * useful builtins for lexing

@@ -18,8 +18,8 @@ static const char *const ktok_strings [] = {
     "return", "switch", "typeswitch", "default", "is", "not", "true",
     "false", "nil",
     /* operators & other */
-    "==", ">=", "<=", "<<", ">>", "+=", "-=", "/=", "*=", "%=", "^=",
-    "++", "--", "<eof>",
+    "==", "!=", ">=", "<=", "<<", ">>", "+=", "-=", "/=", "*=", "%=", "^=",
+    "<<=", ">>=", "++", "--", "<eof>",
     "<integer>", "<float>", "<string>", "<type>", "<identifier>"
 };
 
@@ -66,7 +66,7 @@ static ktt_t ky_parse_next_string(ky_parse_t *p, kts_u *sem) {
     ky_buffer_putch(p->k, i, '\0');
     ky_string_t *str = ky_string_create(p->k, p->k->buffer);
     sem->s = str;
-    return tk_STRING;
+    kswallow(p, tk_STRING);
 }
 
 static ktt_t ky_parse_next_type(ky_parse_t *p, kts_u *sem) {
@@ -132,7 +132,18 @@ static void skip_newline(ky_parse_t *p) {
     /* TODO: catch too many lines */
 }
 
-void ky_parse_start(ky_parse_t *p, FILE *f) {
+/* Returns NULL if can be represented as itself (char) */
+const char *ktok2str(ktt_t tok) {
+    if (tok < UCHAR_MAX) {
+        return NULL;
+    } else if (tok <= (FIRST_TOK_DEF + LAST_TOK_DEF)) {
+        return ktok_strings[tok - FIRST_TOK_DEF];
+    } else {
+        return "<unknown>";
+    }
+}
+
+void ky_parse_init(ky_parse_t *p, FILE *f) {
     kbs_fopen(&p->kbs, f);
     p->linenum = 1;
     for(int i = 0; i < NUM_TOK_KEYWORDS; i++) {
@@ -145,6 +156,7 @@ void ky_parse_start(ky_parse_t *p, FILE *f) {
         ks->special = KSTR_TYPENAME;
         ks->extra = KY_FIRST_CHECKABLE_TYPE + i;
     }
+    knextch(p);
 }
 
 void ky_parse_finish(ky_parse_t *p) {
@@ -152,7 +164,7 @@ void ky_parse_finish(ky_parse_t *p) {
         kbs_close(&p->kbs);
 }
 
-ktt_t ky_parse_next(ky_parse_t *p, kts_u *sem) {
+ktt_t ky_lex(ky_parse_t *p, kts_u *sem) {
     while (_lex_is_space(p->current)) knextch(p);
 
     if (p->current == '#') {
@@ -168,11 +180,12 @@ ktt_t ky_parse_next(ky_parse_t *p, kts_u *sem) {
         return '\n';
     }
 
+    ktt_t this = p->current;
     switch(p->current) {
         case '(': case ')': case '[': case ']':
         case '{': case '}': case ',': case '.':
         case ':': case '~':
-            kswallow(p, p->current);
+            kswallow(p, this);
         case '+':
             knextswitch(p) {
                 case '+': kswallow(p, tk_INC);

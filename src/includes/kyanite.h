@@ -7,14 +7,24 @@
 /* forward declaration of ky_state_t (see kystate.h) */
 typedef struct ky_state_t ky_state_t;
 
+/* forward declaration of ky_scope_t (see kyexec.h) */
+typedef struct ky_scope_t ky_scope_t;
+
+/* forward declaration of ky_call_info_t (see kyexec.h) */
+typedef struct ky_call_info_t ky_call_info_t;
+
+/* forward declaration of ky_parse_t (see kylex.h) */
+typedef struct ky_parse_t ky_parse_t;
+
 /* version */
 #define KY_VERSION_MAJOR "0"
 #define KY_VERSION_MINOR "0"
 #define KY_VERSION_PATCH "1"
 #define KY_VERSION_STAGE "alpha"
 
-#define KY_VERSION_NUM 1
-#define KY_VERSION_FULL "🐖 kyanite " KY_VERSION_MAJOR "." KY_VERSION_MINOR "." KY_VERSION_PATCH "-" KY_VERSION_STAGE
+#define KY_VERSION_NUM    1
+#define KY_VERSION_NUMSTR KY_VERSION_MAJOR "." KY_VERSION_MINOR "." KY_VERSION_PATCH "-" KY_VERSION_STAGE
+#define KY_VERSION_FULL   "🐖 kyanite " KY_VERSION_NUMSTR
 
 /* output */
 #define KY_OUT_NOERR    "🎉 no errors"
@@ -79,8 +89,9 @@ typedef ptrdiff_t kmem_s; /* signed size */
 #define cast(t, e) ((t)(e))
 
 /* type for C functions that interact with kyanite */
-typedef int (*kf) (ky_state_t *k);              /* generic interaction */
-typedef void * (*kf_alloc) (void *p, size_t n); /* memory allocation function */
+typedef int (*kf) (ky_state_t *k);                     /* generic interaction */
+typedef int (*kfc) (ky_state_t *k, ky_call_info_t *c); /* kyanite function with C backend */
+typedef void * (*kf_alloc) (void *p, size_t n);        /* memory allocation function */
 
 /* statuses */
 #define KY_GOOD    0 /* all good :) */
@@ -93,6 +104,10 @@ typedef unsigned char kstatus; /* type of status/error */
 
 /* hash type */
 typedef unsigned long khash;
+
+/* types for parameters */
+#define KY_MAX_PARAM 64
+typedef unsigned char knparam;
 
 /* avoid warnings */
 #define KUNUSED(x) ((void)(x))
