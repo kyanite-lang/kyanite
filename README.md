@@ -1,5 +1,5 @@
 # Kyanite
-Kyanite is a small passion-project programming language intended to be light-weight and simple to use.
+Kyanite is a compiled language designed for simplicity and power. It aims to bridge the gap between simple design and more complex concepts, such as events and inversion of control.
 
 You can read more on the language itself at [LANGUAGE.md](LANGUAGE.md).
 

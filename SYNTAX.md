@@ -1,5 +1,7 @@
 # Kyanite Syntax
 
+**Note:** This details an older syntax of the language and this page needs updating. Many elements will remain the same but the language looks and feels significantly different in many areas.
+
 ## Specification
 The root of the program is `program`, from which all syntax branches.
 ```
