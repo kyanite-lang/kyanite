@@ -1,30 +1,25 @@
-# This test does not pass yet.
-object Account { name, balance }
-event Account.transaction
+type Account
+  @name string
+  @balance int
+  @transaction event(int)
 
-function Account:new(name)
-    this.name = name
-    this.balance = 0
+  function deposit(amount int)
+    @balance += amount
+    invoke @transaction amount
+  end
+
+  function withdraw(amount int)
+    @balance -= amount
+    invoke @transaction -amount
+  end
 end
 
-function Account.deposit(amount)
-    this.balance += amount
-    invoke this.transaction(amount)
-end
-
-function Account.withdraw(amount)
-    this.balance -= amount
-    invoke this.transaction(-amount)
-end
-
-acct = new Account("Janice")
+acct = Account name: "Janice"
 on acct.transaction as tx do
-    print("This transaction is", if tx < 0 then "negative" else "positive")
+  print "This transaction is", if tx < 0 then "negative" else "positive"
 end
 
 acct.deposit(500)
 acct.withdraw(150)
 
-print("This account belongs to", acct.name, "and contains", acct.balance, "dollars.")
-print("What type is the balance, you ask? Why, it's...")
-printType(acct.balance)
+print "This account belongs to", acct.name, "and contains", acct.balance, "dollars."
