@@ -1,10 +1,19 @@
-# Kyanite
+<p align="center">
+    <img src="images/emblem-bgcolour.png" width="120" style="border-radius:4px"/>
+</p>
+
+<h1 align="center">
+    Kyanite
+</h1>
+
 Kyanite is a compiled language designed for simplicity and power. It aims to bridge the gap between simple design and more complex concepts, such as events and inversion of control.
 
-You can read more on the language itself at [LANGUAGE.md](LANGUAGE.md).
+<p align="center" style="font-size:120%">
+    💎 <a href="LANGUAGE.md">Documentation</a><br>💎 <a href="https://kyanite-lang.org">Website</a>
+</p>
 
-## Disclaimer
-Kyanite is still **very** early in development. Installation instructions are provided for the sake of development, but do not expect things to work properly for some time.
+## 🚧 Disclaimer
+Kyanite is still **very** early in development, so things don't work quite yet. But the [language documentation](LANGUAGE.md) is a good guide for how it will turn out.
 
 ## Installation
 ```
